@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package auth.v1;
+
+option go_package = "distributed-media-processing-platform/auth";
+
+service AuthService {
+  rpc RegisterUser(RegisterUserRequest) returns (RegisterUserResponse) {}
+}
+
+message RegisterUserRequest {
+  string email = 1;
+  string password = 2;
+}
+
+message RegisterUserResponse {
+  string message = 1;
+  string access_token = 2;
+}
