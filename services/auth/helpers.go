@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log"
 	"os"
 	"time"
@@ -16,8 +17,21 @@ func hashPassword(userPassword string) (string, error) {
 		log.Printf("error occured during hashing password: %v", err)
 		return "", err
 	}
-
 	return hash, nil
+}
+
+func checkPasswordHash(ctx context.Context, email, userPassword string) (userid string, match bool, errors error) {
+	userid, hash, err := AuthRepo.GetPasswordHashByEmail(ctx, email)
+	match, err = argon2id.ComparePasswordAndHash(userPassword, hash)
+	if err != nil {
+		log.Printf("error occured during comparing password and hash: %v", err)
+		return "", false, err
+	}
+	if match {
+		return userid, true, nil
+	} else {
+		return "", false, nil
+	}
 }
 
 func generateAccessToken(userID string) (string, error) {
@@ -25,7 +39,7 @@ func generateAccessToken(userID string) (string, error) {
 	if err != nil {
 		log.Fatalf("error occured during loading env variables: %v", err)
 	}
-	envJwtSecret := os.Getenv("JWT_SECRET")
+	envJwtSecret := os.Getenv("ACCESS_KEY_JWT_SECRET")
 	jwtSecret := []byte(envJwtSecret)
 	claims := jwt.MapClaims{
 		"user-id": userID,

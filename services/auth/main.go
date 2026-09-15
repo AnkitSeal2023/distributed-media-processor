@@ -21,7 +21,6 @@ type server struct {
 }
 
 var (
-	port     = flag.Int("port", 50051, "The server port")
 	pool     *pgxpool.Pool
 	ctx      = context.Background()
 	AuthRepo *AuthRepository
@@ -32,8 +31,9 @@ func main() {
 	if err != nil {
 		log.Fatalf("error occured during loading env variables: %v", err)
 	}
-
-	pool, err = pgxpool.New(ctx, os.Getenv("DATABASE_URL"))
+	port := os.Getenv("AUTH_PORT")
+	dsn := os.Getenv("AUTH_DATABASE_URL")
+	pool, err = pgxpool.New(ctx, dsn)
 	if err != nil {
 		log.Fatalf("AUTH DB err:%v", err)
 	}
@@ -45,7 +45,7 @@ func main() {
 
 	// --GRPC SERVER START--
 	flag.Parse()
-	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", *port))
+	lis, err := net.Listen("tcp", fmt.Sprintf(":%v", port))
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}

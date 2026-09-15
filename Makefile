@@ -1,15 +1,18 @@
+API_DIR := services/api
+API_BIN := $(API_DIR)/api
+AUTH_DIR := services/auth
+AUTH_BIN := $(AUTH_DIR)/auth
+
 .PHONY: api
 api:
-	go build -o /home/ankit/Studies/coding/projects/distributed-media-processing-platform/services/api/api /home/ankit/Studies/coding/projects/distributed-media-processing-platform/services/api
+	go build -o $(API_BIN) ./$(API_DIR)
 
 .PHONY: auth
 auth:
-	go build -o /home/ankit/Studies/coding/projects/distributed-media-processing-platform/services/auth/auth /home/ankit/Studies/coding/projects/distributed-media-processing-platform/services/auth
+	go build -o $(AUTH_BIN) ./$(AUTH_DIR)
 
 auth-run: auth
-	cd /home/ankit/Studies/coding/projects/distributed-media-processing-platform/services/auth && \
-	/home/ankit/Studies/coding/projects/distributed-media-processing-platform/services/auth/auth
+	./$(AUTH_BIN)
 
 api-run: api
-	cd /home/ankit/Studies/coding/projects/distributed-media-processing-platform/services/api && \
-	/home/ankit/Studies/coding/projects/distributed-media-processing-platform/services/api/api
+	./$(API_BIN)

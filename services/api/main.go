@@ -23,23 +23,41 @@ func main() {
 	if err != nil {
 		log.Fatal("Could not load API env")
 	}
-	port := "localhost:" + os.Getenv("API_PORT")
-	addr := flag.String("addr", port, "the address to connect to")
-	conn, err := grpc.NewClient(*addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	port := os.Getenv("API_PORT")
+	auth_port := os.Getenv("AUTH_PORT")
+	addr := flag.String("addr", "localhost:"+auth_port, "AUTH service Port")
+	grpc_conn, err := grpc.NewClient(*addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		log.Fatalf("did not connect: %v", err)
 	}
 
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
-	r.Post(endpoints.UserEndpoints.Register, func(w http.ResponseWriter, r *http.Request) {
-		handlers.HandleRegisterUser(conn, w, r)
+
+	// unprotected routes
+	r.Group(func(r chi.Router) {
+		r.Post(endpoints.UserEndpoints.Register, func(w http.ResponseWriter, r *http.Request) {
+			handlers.RegisterUser(grpc_conn, w, r)
+		})
+		r.Post(endpoints.UserEndpoints.SignIn, func(w http.ResponseWriter, r *http.Request) {
+			handlers.SigninUser(grpc_conn, w, r)
+		})
+		r.Get(endpoints.Ping, func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte("Pong"))
+		})
 	})
-	log.Print("API Server is running on port 3000")
-	err = http.ListenAndServe(":3000", r)
+
+	// protected routes
+	r.Group(func(r chi.Router) {
+		r.Use(AuthMiddleware)
+	})
+
+	log.Printf("API Server is running on port %v", port)
+	err = http.ListenAndServe("localhost:"+port, r)
 	if err != nil {
-		log.Fatalf("Failed to start api server %v", err)
+		log.Fatalf("Failed to start API server %v", err)
 	}
 
-	defer conn.Close()
+	defer grpc_conn.Close()
 }

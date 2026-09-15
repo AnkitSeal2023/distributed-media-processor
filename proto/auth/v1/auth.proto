@@ -6,6 +6,7 @@ option go_package = "distributed-media-processing-platform/auth";
 
 service AuthService {
   rpc RegisterUser(RegisterUserRequest) returns (RegisterUserResponse) {}
+  rpc SigninUser(SigninUserRequest) returns (SigninUserResponse) {}
 }
 
 message RegisterUserRequest {
@@ -14,6 +15,16 @@ message RegisterUserRequest {
 }
 
 message RegisterUserResponse {
+  string message = 1;
+  string access_token = 2;
+}
+
+message SigninUserRequest {
+  string email = 1;
+  string password = 2;
+}
+
+message SigninUserResponse {
   string message = 1;
   string access_token = 2;
 }
