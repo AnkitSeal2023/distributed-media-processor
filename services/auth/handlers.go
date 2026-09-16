@@ -30,16 +30,12 @@ func (s *server) RegisterUser(ctx context.Context, in *pb.RegisterUserRequest) (
 
 func (s *server) SigninUser(ctx context.Context, in *pb.SigninUserRequest) (*pb.SigninUserResponse, error) {
 	userid, match, err := checkPasswordHash(ctx, in.GetEmail(), in.GetPassword())
-	if err != nil {
-		log.Printf("Failed to hash password: %v", err)
-		return nil, status.Error(codes.Internal, err.Error())
-	}
-
 	if err != nil || !match {
 		if err == error_msgs.ErrUnauthorized {
 			log.Printf("Unauthorized access attempt for email: %v", in.GetEmail())
 			return nil, status.Error(codes.Unauthenticated, err.Error())
 		}
+		log.Printf("Failed to hash password: %v", err)
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 

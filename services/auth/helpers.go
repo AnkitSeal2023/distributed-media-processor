@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"distributed-media-processing-platform/constants/error_msgs"
 	"log"
 	"os"
 	"time"
@@ -22,15 +23,18 @@ func hashPassword(userPassword string) (string, error) {
 
 func checkPasswordHash(ctx context.Context, email, userPassword string) (userid string, match bool, errors error) {
 	userid, hash, err := AuthRepo.GetPasswordHashByEmail(ctx, email)
-	match, err = argon2id.ComparePasswordAndHash(userPassword, hash)
 	if err != nil {
-		log.Printf("error occured during comparing password and hash: %v", err)
 		return "", false, err
 	}
+	match, err = argon2id.ComparePasswordAndHash(userPassword, hash)
 	if match {
 		return userid, true, nil
 	} else {
-		return "", false, nil
+		if err != nil {
+			log.Printf("error occured during comparing password and hash: %v", err)
+			return "", false, error_msgs.ErrInternalServer
+		}
+		return "", false, error_msgs.ErrUnauthorized
 	}
 }
 
