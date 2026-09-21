@@ -6,8 +6,8 @@ import (
 
 	pb "distributed-media-processing-platform/proto/generated/proto/upload/v1"
 
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
+	codes "google.golang.org/grpc/codes"
+	status "google.golang.org/grpc/status"
 )
 
 func (s *server) UploadVideo(ctx context.Context, req *pb.UploadVideoRequest) (*pb.UploadVideoResponse, error) {
@@ -24,7 +24,7 @@ func (s *server) UploadVideo(ctx context.Context, req *pb.UploadVideoRequest) (*
 	}
 
 	return &pb.UploadVideoResponse{
-		PresignedUrl: "abcc",
+		PresignedUrl: "hello from upload service",
 	}, nil
 
 }

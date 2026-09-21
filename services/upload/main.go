@@ -7,13 +7,13 @@ import (
 	"net"
 	"os"
 
-	pb "distributed-media-processing-platform/proto/generated/proto/auth/v1"
+	pb "distributed-media-processing-platform/proto/generated/proto/upload/v1"
 
 	"google.golang.org/grpc"
 )
 
 type server struct {
-	pb.UnimplementedAuthServiceServer
+	pb.UnimplementedUploadServiceServer
 }
 
 func main() {
@@ -25,7 +25,7 @@ func main() {
 		log.Fatalf("failed to listen: %v", err)
 	}
 	s := grpc.NewServer()
-	pb.RegisterAuthServiceServer(s, &server{})
+	pb.RegisterUploadServiceServer(s, &server{})
 	log.Printf("UPLOAD service listening at %v", lis.Addr())
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("failed to serve AUTH: %v", err)

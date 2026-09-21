@@ -52,15 +52,19 @@ func VerifyAccessToken(r *http.Request) (string, error) {
 	}
 	accessToken := parts[1]
 
-	token, _ := jwt.ParseWithClaims(accessToken, &userJWTCustomClaims{}, func(token *jwt.Token) (any, error) {
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+	token, err := jwt.ParseWithClaims(accessToken, &userJWTCustomClaims{}, func(token *jwt.Token) (any, error) {
+		if token.Method != jwt.SigningMethodHS256 {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
-		return accessKeyJwtSecret, nil
+		return []byte(accessKeyJwtSecret), nil
 	})
 
-	if claims, ok := token.Claims.(userJWTCustomClaims); ok && token.Valid {
-		fmt.Printf("User ID from token: %s\n", claims.UserID)
+	if err != nil {
+		fmt.Printf("Error parsing token: %v\n", err)
+		return "", err
+	}
+
+	if claims, ok := token.Claims.(*userJWTCustomClaims); ok && token.Valid {
 		return claims.UserID, nil
 	} else {
 		return "", errors.New("invalid token")

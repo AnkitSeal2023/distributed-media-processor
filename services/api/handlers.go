@@ -110,9 +110,10 @@ func HandleUploadVideo(upload_conn *grpc.ClientConn, w http.ResponseWriter, r *h
 	err := json.NewDecoder(r.Body).Decode(&ur)
 	if err != nil {
 		log.Printf("could not decode JSON: %v", err)
-		w.WriteHeader(http.StatusBadRequest)
+		EncodeResponse(w, nil, "internal server error", nil, http.StatusInternalServerError)
 		return
 	}
+
 	c := upload_pb.NewUploadServiceClient(upload_conn)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
@@ -123,18 +124,9 @@ func HandleUploadVideo(upload_conn *grpc.ClientConn, w http.ResponseWriter, r *h
 	}
 
 	presigned_url := rpb.GetPresignedUrl()
-	response := UserSigninResponse{
-		AccessToken: presigned_url,
+	response := UploadVideoResponse{
+		PresignedUrl: presigned_url,
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-
-	err = json.NewEncoder(w).Encode(response)
-	if err != nil {
-		log.Printf("could not encode JSON: %v", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	w.WriteHeader(http.StatusOK)
-
+	EncodeResponse(w, response, "ok", nil, http.StatusOK)
 }
