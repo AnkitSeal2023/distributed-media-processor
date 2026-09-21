@@ -28,9 +28,9 @@ go.work.sum
 .env
 
 # exclude binaries
-# upload
-# auth
-# api
+upload
+auth
+api
 
 nohup.out
 
