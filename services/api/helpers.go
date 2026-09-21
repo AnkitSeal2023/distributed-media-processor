@@ -11,6 +11,8 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 
+	"encoding/json"
+
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -20,24 +22,22 @@ type userJWTCustomClaims struct {
 	jwt.RegisteredClaims
 }
 
+type apiResponse struct {
+	Data  any    `json:"data,omitempty"`
+	Msg   string `json:"msg,omitempty"`
+	Extra any    `json:"extra,omitempty"`
+}
+
 func HandleGrpcError(w http.ResponseWriter, err error) {
 	switch status.Code(err) {
 	case codes.AlreadyExists:
-		WriteError(w, http.StatusConflict, error_msgs.ErrUserAlreadyExists.Error())
+		EncodeResponse(w, nil, error_msgs.ErrUserAlreadyExists.Error(), nil, http.StatusConflict)
 	case codes.Unauthenticated:
-		WriteError(w, http.StatusUnauthorized, error_msgs.ErrUnauthorized.Error())
+		EncodeResponse(w, nil, error_msgs.ErrUnauthorized.Error(), nil, http.StatusUnauthorized)
 	default:
-		WriteError(w, http.StatusInternalServerError, error_msgs.ErrInternalServer.Error())
+		EncodeResponse(w, nil, error_msgs.ErrInternalServer.Error(), nil, http.StatusInternalServerError)
 	}
 
-}
-
-func WriteError(w http.ResponseWriter, code int, message string) {
-	w.WriteHeader(code)
-	_, err := w.Write([]byte(message))
-	if err != nil {
-		log.Printf("Failed to write message")
-	}
 }
 
 func VerifyAccessToken(r *http.Request) (string, error) {
@@ -64,5 +64,30 @@ func VerifyAccessToken(r *http.Request) (string, error) {
 		return claims.UserID, nil
 	} else {
 		return "", errors.New("invalid token")
+	}
+}
+
+func EncodeResponse(w http.ResponseWriter, data any, msg string, extra any, code int) {
+	w.Header().Set("Content-Type", "application/json")
+
+	response := apiResponse{
+		Data:  data,
+		Msg:   msg,
+		Extra: extra,
+	}
+
+	json, err := json.Marshal(response)
+	if err != nil {
+		log.Printf("could not encode JSON: %v", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(code)
+
+	_, err = w.Write(json)
+	if err != nil {
+		log.Printf("Failed to write to response:%v", err)
+		w.WriteHeader(http.StatusInternalServerError)
 	}
 }

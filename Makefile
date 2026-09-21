@@ -25,7 +25,7 @@ auth-run: auth
 api-run: api
 	doppler run -p api_service -c dev --command="./$(API_BIN)"
 
-upload-run: auth
+upload-run: upload
 	doppler run -p upload_service -c dev --command=./$(UPLOAD_BIN)
 
 auth-gen-proto:

@@ -27,6 +27,11 @@ go.work.sum
 # env file
 .env
 
+# exclude binaries
+# upload
+# auth
+# api
+
 nohup.out
 
 # Editor/IDE

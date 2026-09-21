@@ -9,7 +9,6 @@ import (
 
 	pb "distributed-media-processing-platform/proto/generated/proto/auth/v1"
 
-	env "github.com/joho/godotenv"
 	"google.golang.org/grpc"
 )
 
@@ -18,10 +17,6 @@ type server struct {
 }
 
 func main() {
-	err := env.Load()
-	if err != nil {
-		log.Fatalf("error occured during loading env variables: %v", err)
-	}
 	port := os.Getenv("UPLOAD_PORT")
 	// --GRPC SERVER START--
 	flag.Parse()
