@@ -1,7 +1,6 @@
 package main
 
 import (
-	"distributed-media-processing-platform/services/api/helpers"
 	"net/http"
 
 	"context"
@@ -9,7 +8,7 @@ import (
 
 func AuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		uid, err := helpers.VerifyAccessToken(r)
+		uid, err := VerifyAccessToken(r)
 		if err != nil {
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 			return

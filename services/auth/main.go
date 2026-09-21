@@ -12,7 +12,6 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	env "github.com/joho/godotenv"
 	"google.golang.org/grpc"
 )
 
@@ -21,19 +20,26 @@ type server struct {
 }
 
 var (
-	pool     *pgxpool.Pool
-	ctx      = context.Background()
-	AuthRepo *AuthRepository
+	pool         *pgxpool.Pool
+	ctx          = context.Background()
+	AuthRepo     *AuthRepository
+	port         = os.Getenv("AUTH_PORT")
+	envJwtSecret = os.Getenv("ACCESS_KEY_JWT_SECRET")
+	dsn          = os.Getenv("AUTH_DATABASE_URL")
 )
 
 func main() {
-	err := env.Load()
-	if err != nil {
-		log.Fatalf("error occured during loading env variables: %v", err)
+	if envJwtSecret == "" {
+		log.Fatal("ACCESS_KEY_JWT_SECRET is not set")
 	}
-	port := os.Getenv("AUTH_PORT")
-	dsn := os.Getenv("AUTH_DATABASE_URL")
-	pool, err = pgxpool.New(ctx, dsn)
+	if dsn == "" {
+		log.Fatal("AUTH_DATABASE_URL is not set")
+	}
+	if port == "" {
+		log.Fatal("AUTH_PORT is not set")
+	}
+
+	pool, err := pgxpool.New(ctx, dsn)
 	if err != nil {
 		log.Fatalf("AUTH DB err:%v", err)
 	}

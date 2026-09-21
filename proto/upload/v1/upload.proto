@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package upload.v1;
+
+option go_package = "distributed-media-processing-platform/upload";
+
+service UploadService {
+	rpc UploadVideo(UploadVideoRequest) returns (UploadVideoResponse);
+}
+
+message UploadVideoRequest{
+	string file_type = 1;
+	string file_name = 2;
+	int64 file_size = 3;
+}
+
+message UploadVideoResponse{
+	string presigned_url=1;
+}

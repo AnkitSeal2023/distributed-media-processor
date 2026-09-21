@@ -2,14 +2,11 @@ package main
 
 import (
 	"distributed-media-processing-platform/constants/endpoints"
-	"distributed-media-processing-platform/services/api/handlers"
 	"log"
 	"net/http"
 	"os"
 
 	"flag"
-
-	env "github.com/joho/godotenv"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -18,13 +15,23 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
+var (
+	accessKeyJwtSecret = os.Getenv("ACCESS_KEY_JWT_SECRET")
+	port               = os.Getenv("API_PORT")
+	auth_port          = os.Getenv("AUTH_PORT")
+)
+
 func main() {
-	err := env.Load()
-	if err != nil {
-		log.Fatal("Could not load API env")
+	if accessKeyJwtSecret == "" {
+		log.Fatal("ACCESS_KEY_JWT_SECRET is not set")
 	}
-	port := os.Getenv("API_PORT")
-	auth_port := os.Getenv("AUTH_PORT")
+	if port == "" {
+		log.Fatal("API_PORT is not set")
+	}
+	if auth_port == "" {
+		log.Fatal("AUTH_PORT is not set")
+	}
+
 	addr := flag.String("addr", "localhost:"+auth_port, "AUTH service Port")
 	grpc_conn, err := grpc.NewClient(*addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
@@ -37,10 +44,10 @@ func main() {
 	// unprotected routes
 	r.Group(func(r chi.Router) {
 		r.Post(endpoints.UserEndpoints.Register, func(w http.ResponseWriter, r *http.Request) {
-			handlers.RegisterUser(grpc_conn, w, r)
+			RegisterUser(grpc_conn, w, r)
 		})
 		r.Post(endpoints.UserEndpoints.SignIn, func(w http.ResponseWriter, r *http.Request) {
-			handlers.SigninUser(grpc_conn, w, r)
+			SigninUser(grpc_conn, w, r)
 		})
 		r.Get(endpoints.Ping, func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusOK)

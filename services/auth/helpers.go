@@ -9,7 +9,6 @@ import (
 
 	"github.com/alexedwards/argon2id"
 	jwt "github.com/golang-jwt/jwt/v5"
-	env "github.com/joho/godotenv"
 )
 
 func hashPassword(userPassword string) (string, error) {
@@ -39,10 +38,6 @@ func checkPasswordHash(ctx context.Context, email, userPassword string) (userid 
 }
 
 func generateAccessToken(userID string) (string, error) {
-	err := env.Load()
-	if err != nil {
-		log.Fatalf("error occured during loading env variables: %v", err)
-	}
 	envJwtSecret := os.Getenv("ACCESS_KEY_JWT_SECRET")
 	jwtSecret := []byte(envJwtSecret)
 	claims := jwt.MapClaims{
