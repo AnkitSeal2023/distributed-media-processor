@@ -34,7 +34,10 @@ func HandleGrpcError(w http.ResponseWriter, err error) {
 		EncodeResponse(w, nil, error_msgs.ErrUserAlreadyExists.Error(), nil, http.StatusConflict)
 	case codes.Unauthenticated:
 		EncodeResponse(w, nil, error_msgs.ErrUnauthorized.Error(), nil, http.StatusUnauthorized)
+	case codes.InvalidArgument:
+		EncodeResponse(w, nil, error_msgs.ErrInvalidArgument.Error(), nil, http.StatusBadRequest)
 	default:
+		fmt.Printf("err: %v\n", err.Error())
 		EncodeResponse(w, nil, error_msgs.ErrInternalServer.Error(), nil, http.StatusInternalServerError)
 	}
 

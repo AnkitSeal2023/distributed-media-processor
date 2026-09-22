@@ -10,8 +10,6 @@ import (
 
 	auth_pb "distributed-media-processing-platform/proto/generated/proto/auth/v1"
 	upload_pb "distributed-media-processing-platform/proto/generated/proto/upload/v1"
-
-	"google.golang.org/grpc"
 )
 
 type UserAuthRequest struct {
@@ -28,7 +26,8 @@ type UserSigninResponse struct {
 }
 
 type UploadVideoResponse struct {
-	PresignedUrl string `json:"presigned_url"`
+	PresignedUrl string            `json:"presigned_url"`
+	FormData     map[string]string `json:"form_data"`
 }
 
 type UploadVideoRequest struct {
@@ -37,7 +36,7 @@ type UploadVideoRequest struct {
 	FileSize int64  `json:"file_size"`
 }
 
-func HandleRegisterUser(auth_conn *grpc.ClientConn, w http.ResponseWriter, r *http.Request) {
+func HandleRegisterUser(c auth_pb.AuthServiceClient, ctx context.Context, w http.ResponseWriter, r *http.Request) {
 	var ur UserAuthRequest
 	err := json.NewDecoder(r.Body).Decode(&ur)
 	if err != nil {
@@ -45,10 +44,7 @@ func HandleRegisterUser(auth_conn *grpc.ClientConn, w http.ResponseWriter, r *ht
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	c := auth_pb.NewAuthServiceClient(auth_conn)
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-	defer cancel()
 	rpb, err := c.RegisterUser(ctx, &auth_pb.RegisterUserRequest{Email: ur.Email, Password: ur.Password})
 	if err != nil {
 		HandleGrpcError(w, err)
@@ -71,7 +67,7 @@ func HandleRegisterUser(auth_conn *grpc.ClientConn, w http.ResponseWriter, r *ht
 	w.WriteHeader(http.StatusOK)
 }
 
-func HandleSigninUser(auth_conn *grpc.ClientConn, w http.ResponseWriter, r *http.Request) {
+func HandleSigninUser(c auth_pb.AuthServiceClient, ctx context.Context, w http.ResponseWriter, r *http.Request) {
 	var ur UserAuthRequest
 	err := json.NewDecoder(r.Body).Decode(&ur)
 	if err != nil {
@@ -79,7 +75,6 @@ func HandleSigninUser(auth_conn *grpc.ClientConn, w http.ResponseWriter, r *http
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	c := auth_pb.NewAuthServiceClient(auth_conn)
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
@@ -105,7 +100,7 @@ func HandleSigninUser(auth_conn *grpc.ClientConn, w http.ResponseWriter, r *http
 	w.WriteHeader(http.StatusOK)
 }
 
-func HandleUploadVideo(upload_conn *grpc.ClientConn, w http.ResponseWriter, r *http.Request) {
+func HandleUploadVideo(c upload_pb.UploadServiceClient, ctx context.Context, w http.ResponseWriter, r *http.Request) {
 	var ur UploadVideoRequest
 	err := json.NewDecoder(r.Body).Decode(&ur)
 	if err != nil {
@@ -114,7 +109,6 @@ func HandleUploadVideo(upload_conn *grpc.ClientConn, w http.ResponseWriter, r *h
 		return
 	}
 
-	c := upload_pb.NewUploadServiceClient(upload_conn)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 	rpb, err := c.UploadVideo(ctx, &upload_pb.UploadVideoRequest{FileName: ur.FileName, FileType: ur.FileType, FileSize: ur.FileSize})
@@ -123,9 +117,9 @@ func HandleUploadVideo(upload_conn *grpc.ClientConn, w http.ResponseWriter, r *h
 		return
 	}
 
-	presigned_url := rpb.GetPresignedUrl()
 	response := UploadVideoResponse{
-		PresignedUrl: presigned_url,
+		PresignedUrl: rpb.GetPresignedUrl(),
+		FormData:     rpb.GetFormData(),
 	}
 
 	EncodeResponse(w, response, "ok", nil, http.StatusOK)

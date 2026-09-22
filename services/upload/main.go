@@ -9,6 +9,8 @@ import (
 
 	pb "distributed-media-processing-platform/proto/generated/proto/upload/v1"
 
+	"github.com/minio/minio-go/v7"
+	"github.com/minio/minio-go/v7/pkg/credentials"
 	"google.golang.org/grpc"
 )
 
@@ -16,8 +18,44 @@ type server struct {
 	pb.UnimplementedUploadServiceServer
 }
 
+var (
+	port                  = os.Getenv("UPLOAD_PORT")
+	bucketName            = os.Getenv("BUCKET_NAME")
+	minio_accessKeyID     = os.Getenv("MINIO_ACCESSKEYID")
+	minio_secretAccessKey = os.Getenv("MINIO_SECRETACCESSKEY")
+	minio_endpoint        = fmt.Sprintf("http://localhost:%v", os.Getenv("MINIO_SERVER_PORT"))
+	minioClient           *minio.Client
+)
+
 func main() {
-	port := os.Getenv("UPLOAD_PORT")
+	if port == "" {
+		fmt.Println("UPLOAD_PORT environment variable is not set")
+		os.Exit(1)
+	}
+	if bucketName == "" {
+		fmt.Println("BUCKET_NAME environment variable is not set")
+		os.Exit(1)
+	}
+	if minio_accessKeyID == "" {
+		fmt.Println("MINIO_ACCESSKEYID environment variable is not set")
+		os.Exit(1)
+	}
+	if minio_secretAccessKey == "" {
+		fmt.Println("MINIO_SECRETACCESSKEY environment variable is not set")
+		os.Exit(1)
+	}
+
+	//init minio client
+	useSSL := false
+	minioclient, err := minio.New(minio_endpoint, &minio.Options{
+		Creds:  credentials.NewStaticV4(minio_accessKeyID, minio_secretAccessKey, ""),
+		Secure: useSSL,
+	})
+	minioClient = minioclient
+	if err != nil {
+		log.Fatalln(err)
+	}
+
 	// --GRPC SERVER START--
 	flag.Parse()
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%v", port))

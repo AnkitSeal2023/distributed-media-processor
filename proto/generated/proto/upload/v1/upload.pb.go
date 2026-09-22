@@ -84,6 +84,7 @@ func (x *UploadVideoRequest) GetFileSize() int64 {
 type UploadVideoResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	PresignedUrl  string                 `protobuf:"bytes,1,opt,name=presigned_url,json=presignedUrl,proto3" json:"presigned_url,omitempty"`
+	FormData      map[string]string      `protobuf:"bytes,2,rep,name=form_data,json=formData,proto3" json:"form_data,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -125,6 +126,13 @@ func (x *UploadVideoResponse) GetPresignedUrl() string {
 	return ""
 }
 
+func (x *UploadVideoResponse) GetFormData() map[string]string {
+	if x != nil {
+		return x.FormData
+	}
+	return nil
+}
+
 var File_proto_upload_v1_upload_proto protoreflect.FileDescriptor
 
 const file_proto_upload_v1_upload_proto_rawDesc = "" +
@@ -133,9 +141,13 @@ const file_proto_upload_v1_upload_proto_rawDesc = "" +
 	"\x12UploadVideoRequest\x12\x1b\n" +
 	"\tfile_type\x18\x01 \x01(\tR\bfileType\x12\x1b\n" +
 	"\tfile_name\x18\x02 \x01(\tR\bfileName\x12\x1b\n" +
-	"\tfile_size\x18\x03 \x01(\x03R\bfileSize\":\n" +
+	"\tfile_size\x18\x03 \x01(\x03R\bfileSize\"\xc2\x01\n" +
 	"\x13UploadVideoResponse\x12#\n" +
-	"\rpresigned_url\x18\x01 \x01(\tR\fpresignedUrl2]\n" +
+	"\rpresigned_url\x18\x01 \x01(\tR\fpresignedUrl\x12I\n" +
+	"\tform_data\x18\x02 \x03(\v2,.upload.v1.UploadVideoResponse.FormDataEntryR\bformData\x1a;\n" +
+	"\rFormDataEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x012]\n" +
 	"\rUploadService\x12L\n" +
 	"\vUploadVideo\x12\x1d.upload.v1.UploadVideoRequest\x1a\x1e.upload.v1.UploadVideoResponseB.Z,distributed-media-processing-platform/uploadb\x06proto3"
 
@@ -151,19 +163,21 @@ func file_proto_upload_v1_upload_proto_rawDescGZIP() []byte {
 	return file_proto_upload_v1_upload_proto_rawDescData
 }
 
-var file_proto_upload_v1_upload_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_proto_upload_v1_upload_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
 var file_proto_upload_v1_upload_proto_goTypes = []any{
 	(*UploadVideoRequest)(nil),  // 0: upload.v1.UploadVideoRequest
 	(*UploadVideoResponse)(nil), // 1: upload.v1.UploadVideoResponse
+	nil,                         // 2: upload.v1.UploadVideoResponse.FormDataEntry
 }
 var file_proto_upload_v1_upload_proto_depIdxs = []int32{
-	0, // 0: upload.v1.UploadService.UploadVideo:input_type -> upload.v1.UploadVideoRequest
-	1, // 1: upload.v1.UploadService.UploadVideo:output_type -> upload.v1.UploadVideoResponse
-	1, // [1:2] is the sub-list for method output_type
-	0, // [0:1] is the sub-list for method input_type
-	0, // [0:0] is the sub-list for extension type_name
-	0, // [0:0] is the sub-list for extension extendee
-	0, // [0:0] is the sub-list for field type_name
+	2, // 0: upload.v1.UploadVideoResponse.form_data:type_name -> upload.v1.UploadVideoResponse.FormDataEntry
+	0, // 1: upload.v1.UploadService.UploadVideo:input_type -> upload.v1.UploadVideoRequest
+	1, // 2: upload.v1.UploadService.UploadVideo:output_type -> upload.v1.UploadVideoResponse
+	2, // [2:3] is the sub-list for method output_type
+	1, // [1:2] is the sub-list for method input_type
+	1, // [1:1] is the sub-list for extension type_name
+	1, // [1:1] is the sub-list for extension extendee
+	0, // [0:1] is the sub-list for field type_name
 }
 
 func init() { file_proto_upload_v1_upload_proto_init() }
@@ -177,7 +191,7 @@ func file_proto_upload_v1_upload_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_upload_v1_upload_proto_rawDesc), len(file_proto_upload_v1_upload_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   2,
+			NumMessages:   3,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

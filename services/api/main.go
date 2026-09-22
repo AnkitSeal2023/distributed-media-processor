@@ -1,10 +1,14 @@
 package main
 
 import (
+	"context"
 	"distributed-media-processing-platform/constants/endpoints"
+	auth_pb "distributed-media-processing-platform/proto/generated/proto/auth/v1"
+	upload_pb "distributed-media-processing-platform/proto/generated/proto/upload/v1"
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"flag"
 
@@ -36,15 +40,22 @@ func main() {
 		log.Fatal("UPLOAD_PORT is not set")
 	}
 
+	// auth service client init
 	auth_addr := flag.String("auth_addr", "localhost:"+auth_port, "AUTH service Port")
 	auth_grpc_conn, err := grpc.NewClient(*auth_addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
-
+	auth_grpc_client := auth_pb.NewAuthServiceClient(auth_grpc_conn)
+	auth_ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
 	if err != nil {
 		log.Fatalf("API could not connect to AUTH grpc service: %v", err)
 	}
 
+	// upload service client init
 	upload_adddr := flag.String("upload_addr", "localhost:"+upload_port, "UPLOAD service Port")
 	upload_grpc_conn, err := grpc.NewClient(*upload_adddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	upload_grpc_client := upload_pb.NewUploadServiceClient(upload_grpc_conn)
+	upload_ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
 	if err != nil {
 		log.Fatalf("API could not connect to UPLOAD grpc service: %v", err)
 	}
@@ -54,11 +65,11 @@ func main() {
 
 	// unprotected routes
 	r.Group(func(r chi.Router) {
-		r.Post(endpoints.AuthEndpoints.Register, func(w http.ResponseWriter, r *http.Request) {
-			HandleRegisterUser(auth_grpc_conn, w, r)
+		r.Post(endpoints.AuthEndpoints.SignUp, func(w http.ResponseWriter, r *http.Request) {
+			HandleRegisterUser(auth_grpc_client, auth_ctx, w, r)
 		})
 		r.Post(endpoints.AuthEndpoints.SignIn, func(w http.ResponseWriter, r *http.Request) {
-			HandleSigninUser(auth_grpc_conn, w, r)
+			HandleSigninUser(auth_grpc_client, auth_ctx, w, r)
 		})
 		r.Get(endpoints.Ping, func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusOK)
@@ -70,7 +81,7 @@ func main() {
 	r.Group(func(r chi.Router) {
 		r.Use(AuthMiddleware)
 		r.Post(endpoints.UserEndpoints.UploadVideo, func(w http.ResponseWriter, r *http.Request) {
-			HandleUploadVideo(upload_grpc_conn, w, r)
+			HandleUploadVideo(upload_grpc_client, upload_ctx, w, r)
 		})
 	})
 
