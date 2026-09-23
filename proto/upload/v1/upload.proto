@@ -9,9 +9,10 @@ service UploadService {
 }
 
 message UploadVideoRequest{
-	string file_type = 1;
-	string file_name = 2;
-	int64 file_size = 3;
+	string userid = 1;
+	string file_type = 2;
+	string file_name = 3;
+	int64 file_size = 4;
 }
 
 message UploadVideoResponse{

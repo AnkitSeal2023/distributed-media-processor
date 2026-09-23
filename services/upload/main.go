@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"log"
@@ -8,7 +9,9 @@ import (
 	"os"
 
 	pb "distributed-media-processing-platform/proto/generated/proto/upload/v1"
+	"distributed-media-processing-platform/services/upload/repository"
 
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
 	"google.golang.org/grpc"
@@ -19,6 +22,10 @@ type server struct {
 }
 
 var (
+	pool                  *pgxpool.Pool
+	UploadRepo            *repository.UploadRepository
+	db_ctx                = context.Background()
+	dsn                   = os.Getenv("UPLOAD_DATABASE_URL")
 	port                  = os.Getenv("UPLOAD_PORT")
 	bucketName            = os.Getenv("BUCKET_NAME")
 	minio_accessKeyID     = os.Getenv("MINIO_ACCESSKEYID")
@@ -55,6 +62,16 @@ func main() {
 	if err != nil {
 		log.Fatalln(err)
 	}
+
+	pool, err := pgxpool.New(db_ctx, dsn)
+	if err != nil {
+		log.Fatalf("UPLOAD DB err:%v", err)
+	}
+	err = pool.Ping(db_ctx)
+	if err != nil {
+		log.Fatalf("UPLOAD DB is unreachable: %v", err)
+	}
+	UploadRepo = repository.NewUploadRepository(pool)
 
 	// --GRPC SERVER START--
 	flag.Parse()
