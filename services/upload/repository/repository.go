@@ -27,8 +27,7 @@ func (r *UploadRepository) InsertNewVideo(ctx context.Context, filename string, 
 		return error_msgs.ErrInternalServer
 	}
 
-	log.Printf("userid:%v\n", userID)
-	_, err = r.db.Exec(ctx, InsertQuery, filename, userid, status)
+	_, err = r.db.Exec(ctx, InsertVideo, filename, userID, status)
 	if err != nil {
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) && pgErr.Code == "23505" {

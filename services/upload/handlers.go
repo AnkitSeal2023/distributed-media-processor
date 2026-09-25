@@ -16,14 +16,14 @@ func (s *server) UploadVideo(ctx context.Context, req *pb.UploadVideoRequest) (*
 	filesize := req.GetFileSize()
 	filetype := req.GetFileType()
 
-	if len(filename) >= 50 {
-		return nil, status.Error(codes.InvalidArgument, "File name should be less than 50 characters")
+	if len(filename) >= 255 {
+		return nil, status.Error(codes.InvalidArgument, "File name should be less than 255 characters")
 	}
 	if filesize > 1000000000 {
 		return nil, status.Error(codes.InvalidArgument, "File size should be less or equal to 1GB")
 	}
 	if !(filetype == "video/mp4" || filetype == "video/mkv" || filetype == "video/avi") {
-		return nil, status.Error(codes.InvalidArgument, "File type should be video/mp4, video/mkv or video/avi")
+		return nil, status.Error(codes.InvalidArgument, "File type should be mp4, mkv or avi")
 	}
 
 	presigned_url, formData, err := generatePresignedUrl(filename, filesize)

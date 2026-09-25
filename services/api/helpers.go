@@ -31,14 +31,31 @@ type apiResponse struct {
 func HandleGrpcError(w http.ResponseWriter, err error) {
 	switch status.Code(err) {
 	case codes.AlreadyExists:
-		EncodeResponse(w, nil, error_msgs.ErrUserAlreadyExists.Error(), nil, http.StatusConflict)
+		st, ok := status.FromError(err)
+		if !ok {
+			EncodeResponse(w, nil, error_msgs.ErrUserAlreadyExists.Error(), nil, http.StatusConflict)
+			return
+		}
+		EncodeResponse(w, nil, st.Message(), nil, http.StatusConflict)
+
 	case codes.Unauthenticated:
-		EncodeResponse(w, nil, error_msgs.ErrUnauthorized.Error(), nil, http.StatusUnauthorized)
+		st, ok := status.FromError(err)
+		if !ok {
+			EncodeResponse(w, nil, error_msgs.ErrUnauthorized.Error(), nil, http.StatusUnauthorized)
+			return
+		}
+		EncodeResponse(w, nil, st.Message(), nil, http.StatusUnauthorized)
+
 	case codes.InvalidArgument:
-		EncodeResponse(w, nil, error_msgs.ErrInvalidArgument.Error(), nil, http.StatusBadRequest)
+		st, ok := status.FromError(err)
+		if !ok {
+			EncodeResponse(w, nil, error_msgs.ErrInvalidArgument.Error(), nil, http.StatusInternalServerError)
+			return
+		}
+		EncodeResponse(w, nil, st.Message(), nil, http.StatusBadRequest)
 	default:
 		fmt.Printf("err: %v\n", err.Error())
-		EncodeResponse(w, nil, error_msgs.ErrInternalServer.Error(), nil, http.StatusInternalServerError)
+		EncodeResponse(w, nil, errors.New("an error occurred").Error(), nil, int(status.Code(err)))
 	}
 
 }
