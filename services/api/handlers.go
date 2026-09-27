@@ -101,6 +101,14 @@ func HandleSigninUser(c auth_pb.AuthServiceClient, ctx context.Context, w http.R
 }
 
 func HandleUploadVideo(c upload_pb.UploadServiceClient, ctx context.Context, w http.ResponseWriter, r *http.Request) {
+	uid := ctx.Value("userID")
+	if uid == nil {
+		log.Printf("userID not found in context")
+		EncodeResponse(w, nil, "unauthorized", nil, http.StatusUnauthorized)
+		return
+	}
+	userid := uid.(string)
+
 	var ur UploadVideoRequest
 	err := json.NewDecoder(r.Body).Decode(&ur)
 	if err != nil {
@@ -109,9 +117,7 @@ func HandleUploadVideo(c upload_pb.UploadServiceClient, ctx context.Context, w h
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-	defer cancel()
-	rpb, err := c.UploadVideo(ctx, &upload_pb.UploadVideoRequest{FileName: ur.FileName, FileType: ur.FileType, FileSize: ur.FileSize})
+	rpb, err := c.UploadVideo(ctx, &upload_pb.UploadVideoRequest{Userid: userid, FileName: ur.FileName, FileType: ur.FileType, FileSize: ur.FileSize})
 	if err != nil {
 		HandleGrpcError(w, err)
 		return

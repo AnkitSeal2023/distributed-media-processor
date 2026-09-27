@@ -28,9 +28,11 @@ go.work.sum
 .env
 
 # exclude binaries
-/services/api/api
-/services/auth/auth
-/services/upload/upload
+services/api/api
+services/auth/auth
+services/upload/upload
+services/upload/upload/status/video_status
+services/worker/worker
 
 nohup.out
 

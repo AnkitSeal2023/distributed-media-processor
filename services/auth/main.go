@@ -21,7 +21,7 @@ type server struct {
 
 var (
 	pool         *pgxpool.Pool
-	ctx          = context.Background()
+	db_ctx       = context.Background()
 	AuthRepo     *AuthRepository
 	port         = os.Getenv("AUTH_PORT")
 	envJwtSecret = os.Getenv("ACCESS_KEY_JWT_SECRET")
@@ -39,11 +39,11 @@ func main() {
 		log.Fatal("AUTH_PORT is not set")
 	}
 
-	pool, err := pgxpool.New(ctx, dsn)
+	pool, err := pgxpool.New(db_ctx, dsn)
 	if err != nil {
 		log.Fatalf("AUTH DB err:%v", err)
 	}
-	err = pool.Ping(ctx)
+	err = pool.Ping(db_ctx)
 	if err != nil {
 		log.Fatalf("AUTH DB is unreachable: %v", err)
 	}

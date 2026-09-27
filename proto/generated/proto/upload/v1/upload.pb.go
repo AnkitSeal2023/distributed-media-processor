@@ -23,9 +23,10 @@ const (
 
 type UploadVideoRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	FileType      string                 `protobuf:"bytes,1,opt,name=file_type,json=fileType,proto3" json:"file_type,omitempty"`
-	FileName      string                 `protobuf:"bytes,2,opt,name=file_name,json=fileName,proto3" json:"file_name,omitempty"`
-	FileSize      int64                  `protobuf:"varint,3,opt,name=file_size,json=fileSize,proto3" json:"file_size,omitempty"`
+	Userid        string                 `protobuf:"bytes,1,opt,name=userid,proto3" json:"userid,omitempty"`
+	FileType      string                 `protobuf:"bytes,2,opt,name=file_type,json=fileType,proto3" json:"file_type,omitempty"`
+	FileName      string                 `protobuf:"bytes,3,opt,name=file_name,json=fileName,proto3" json:"file_name,omitempty"`
+	FileSize      int64                  `protobuf:"varint,4,opt,name=file_size,json=fileSize,proto3" json:"file_size,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -58,6 +59,13 @@ func (x *UploadVideoRequest) ProtoReflect() protoreflect.Message {
 // Deprecated: Use UploadVideoRequest.ProtoReflect.Descriptor instead.
 func (*UploadVideoRequest) Descriptor() ([]byte, []int) {
 	return file_proto_upload_v1_upload_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *UploadVideoRequest) GetUserid() string {
+	if x != nil {
+		return x.Userid
+	}
+	return ""
 }
 
 func (x *UploadVideoRequest) GetFileType() string {
@@ -137,11 +145,12 @@ var File_proto_upload_v1_upload_proto protoreflect.FileDescriptor
 
 const file_proto_upload_v1_upload_proto_rawDesc = "" +
 	"\n" +
-	"\x1cproto/upload/v1/upload.proto\x12\tupload.v1\"k\n" +
-	"\x12UploadVideoRequest\x12\x1b\n" +
-	"\tfile_type\x18\x01 \x01(\tR\bfileType\x12\x1b\n" +
-	"\tfile_name\x18\x02 \x01(\tR\bfileName\x12\x1b\n" +
-	"\tfile_size\x18\x03 \x01(\x03R\bfileSize\"\xc2\x01\n" +
+	"\x1cproto/upload/v1/upload.proto\x12\tupload.v1\"\x83\x01\n" +
+	"\x12UploadVideoRequest\x12\x16\n" +
+	"\x06userid\x18\x01 \x01(\tR\x06userid\x12\x1b\n" +
+	"\tfile_type\x18\x02 \x01(\tR\bfileType\x12\x1b\n" +
+	"\tfile_name\x18\x03 \x01(\tR\bfileName\x12\x1b\n" +
+	"\tfile_size\x18\x04 \x01(\x03R\bfileSize\"\xc2\x01\n" +
 	"\x13UploadVideoResponse\x12#\n" +
 	"\rpresigned_url\x18\x01 \x01(\tR\fpresignedUrl\x12I\n" +
 	"\tform_data\x18\x02 \x03(\v2,.upload.v1.UploadVideoResponse.FormDataEntryR\bformData\x1a;\n" +
