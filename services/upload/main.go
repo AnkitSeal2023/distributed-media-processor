@@ -63,6 +63,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
+	// init db
 	pool, err := pgxpool.New(db_ctx, dsn)
 	if err != nil {
 		log.Fatalf("UPLOAD DB err:%v", err)

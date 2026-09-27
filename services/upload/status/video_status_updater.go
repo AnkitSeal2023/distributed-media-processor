@@ -1,11 +1,33 @@
 package main
 
 import (
+	"context"
+	"distributed-media-processing-platform/services/upload/repository"
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
 
+	"github.com/jackc/pgx/v5/pgxpool"
 	amqp "github.com/rabbitmq/amqp091-go"
+)
+
+type Event struct {
+	Records []struct {
+		S3 struct {
+			Object struct {
+				Key string `json:"key"`
+			} `json:"object"`
+		} `json:"s3"`
+	} `json:"Records"`
+}
+
+var (
+	pool       *pgxpool.Pool
+	UploadRepo *repository.UploadRepository
+	db_ctx     = context.Background()
+
+	dsn = os.Getenv("UPLOAD_DATABASE_URL")
 )
 
 func failOnError(err error, msg string) {
@@ -14,6 +36,15 @@ func failOnError(err error, msg string) {
 	}
 }
 func main() {
+	pool, err := pgxpool.New(db_ctx, dsn)
+	if err != nil {
+		log.Fatalf("UPLOAD DB err:%v", err)
+	}
+	err = pool.Ping(db_ctx)
+	if err != nil {
+		log.Fatalf("UPLOAD DB is unreachable: %v", err)
+	}
+	UploadRepo = repository.NewUploadRepository(pool)
 	conn, err := amqp.Dial(os.Getenv("RABBITMQ_URL"))
 	failOnError(err, "Failed to connect to RabbitMQ")
 	defer conn.Close()
@@ -45,7 +76,6 @@ func main() {
 	failOnError(err, "Failed to declare a queue")
 	fmt.Println("Queue declared successfully")
 
-	// for _, s := range os.Args[1:] {
 	log.Printf("Binding queue %s to exchange %s with routing key %s", q.Name, "media_events", "")
 	err = ch.QueueBind(
 		q.Name,         // queue name
@@ -55,8 +85,6 @@ func main() {
 		nil)
 	failOnError(err, "Failed to bind a queue")
 	fmt.Printf("Queue %s bound to exchange %s with routing key %s\n", q.Name, "media_events", "")
-
-	// }
 
 	msgs, err := ch.Consume(
 		q.Name, // queue
@@ -69,14 +97,22 @@ func main() {
 	)
 	failOnError(err, "Failed to register a consumer")
 
-	var forever chan struct{}
-
 	go func() {
 		for d := range msgs {
-			log.Printf(" [x] %s", d.Body)
+			var event Event
+			err := json.Unmarshal(d.Body, &event)
+			if err != nil {
+				log.Printf("Error unmarshalling message: %s", err)
+				continue
+			}
+
+			for _, record := range event.Records {
+				key := record.S3.Object.Key
+				UploadRepo.UpdateVideoStatus(db_ctx, key, "uploaded")
+			}
 		}
 	}()
 
 	log.Println(" [*] Waiting for logs. To exit press CTRL+C")
-	<-forever
+	select {}
 }

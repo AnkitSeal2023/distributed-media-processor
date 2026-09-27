@@ -26,16 +26,16 @@ func (s *server) UploadVideo(ctx context.Context, req *pb.UploadVideoRequest) (*
 		return nil, status.Error(codes.InvalidArgument, "File type should be mp4, mkv or avi")
 	}
 
-	presigned_url, formData, err := generatePresignedUrl(filename, filesize)
+	videoID, err := UploadRepo.InsertNewVideo(ctx, filename, userid, "uploading")
 	if err != nil {
+		if err.Error() == errors.New("23505").Error() {
+			return nil, status.Error(codes.AlreadyExists, "A video with such filename already exists")
+		}
 		return nil, status.Error(codes.Internal, "internal server error")
 	}
 
-	err = UploadRepo.InsertNewVideo(ctx, filename, userid, "uploading")
+	presigned_url, formData, err := generatePresignedUrl(videoID, filesize, filetype)
 	if err != nil {
-		if errors.Is(err, errors.New("A video with such filename already exists")) {
-			return nil, status.Error(codes.AlreadyExists, "A video with such filename already exists")
-		}
 		return nil, status.Error(codes.Internal, "internal server error")
 	}
 

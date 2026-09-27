@@ -33,7 +33,7 @@ func HandleGrpcError(w http.ResponseWriter, err error) {
 	case codes.AlreadyExists:
 		st, ok := status.FromError(err)
 		if !ok {
-			EncodeResponse(w, nil, error_msgs.ErrUserAlreadyExists.Error(), nil, http.StatusConflict)
+			EncodeResponse(w, nil, err.Error(), nil, http.StatusConflict)
 			return
 		}
 		EncodeResponse(w, nil, st.Message(), nil, http.StatusConflict)
@@ -53,9 +53,11 @@ func HandleGrpcError(w http.ResponseWriter, err error) {
 			return
 		}
 		EncodeResponse(w, nil, st.Message(), nil, http.StatusBadRequest)
+
 	default:
-		fmt.Printf("err: %v\n", err.Error())
-		EncodeResponse(w, nil, errors.New("an error occurred").Error(), nil, int(status.Code(err)))
+		log.Printf("err: %v\n", err.Error())
+		log.Printf("err code: %d\n", status.Code(err))
+		EncodeResponse(w, nil, errors.New("an error occurred").Error(), nil, http.StatusInternalServerError)
 	}
 
 }
