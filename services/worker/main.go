@@ -2,11 +2,13 @@ package main
 
 import (
 	"context"
+	"distributed-media-processing-platform/services/worker/repository"
 	"encoding/json"
 	"fmt"
 	"log"
 	"os"
 
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
 	amqp "github.com/rabbitmq/amqp091-go"
@@ -64,6 +66,16 @@ func main() {
 		fmt.Println("RABBITMQ_URL environment variable is not set")
 		os.Exit(1)
 	}
+
+	// init db
+	db, err := pgxpool.New(ctx, os.Getenv("DATABASE_URL"))
+	if err != nil {
+		log.Fatal("Failed to create database connection pool: ", err)
+	}
+	defer db.Close()
+
+	workerRepo := repository.NewWorkerRepository(db)
+
 	//init minio client
 	useSSL := false
 	minioclient, err := minio.New(minio_endpoint, &minio.Options{
@@ -129,8 +141,16 @@ func main() {
 				key := record.S3.Object.Key
 				//TODO: remove printf
 				log.Printf("Key: %s", key)
-				processVideo(ctx, key)
-				d.Ack(false)
+				err, requeue := processVideo(ctx, key, *workerRepo)
+				//TODO : implement 3 tries, then DLQ for failed videos
+				if err != nil {
+					log.Printf("Error processing video: %s", err)
+				}
+				if requeue {
+					d.Nack(false, true)
+				} else {
+					d.Nack(false, true)
+				}
 			}
 		}
 	}()

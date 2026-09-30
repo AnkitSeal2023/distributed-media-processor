@@ -3,9 +3,9 @@ package main
 import (
 	"bufio"
 	"context"
+	"distributed-media-processing-platform/services/worker/repository"
 	"fmt"
 	"io"
-	"os"
 	"os/exec"
 	"strconv"
 	"strings"
@@ -13,12 +13,12 @@ import (
 	"github.com/minio/minio-go/v7"
 )
 
-func processVideo(ctx context.Context, fileNameWithExtension string) (e error) {
+func processVideo(ctx context.Context, fileNameWithExtension string, workerRepo repository.WorkerRepository) (e error, requeue bool) {
 	videoID := strings.Split(fileNameWithExtension, ".")[0]
 
 	ok := downloadVideo(ctx, fileNameWithExtension)
 	if !ok {
-		return fmt.Errorf("failed to download video with id: %v", fileNameWithExtension)
+		return fmt.Errorf("failed to download video with id: %v", fileNameWithExtension), true
 	}
 
 	// Get video duration
@@ -32,15 +32,19 @@ func processVideo(ctx context.Context, fileNameWithExtension string) (e error) {
 
 	op, err := ffprobe.Output()
 	if err != nil {
-		return fmt.Errorf("failed to run ffprobe: %v", err)
+		db_err := workerRepo.UpdateVideoStatusToFailed(ctx, videoID)
+		if db_err != nil {
+			fmt.Printf("failed to update video status to failed: video_ID = %v \n err=%v", videoID, db_err)
+			fmt.Printf("ffprobe failed for video id: %v err = %v", videoID, err)
+			return fmt.Errorf("failed to update video status to failed: %v", db_err), false
+		}
+		return fmt.Errorf("failed to execute ffprobe: %v", err), false
 	}
 
 	duration, err := strconv.ParseFloat(strings.TrimSpace(string(op)), 64)
 	if err != nil {
-		return fmt.Errorf("failed to parse video duration: %v", err)
+		return fmt.Errorf("failed to parse video duration: %v", err), false
 	}
-
-	fmt.Printf("Video duration: %.2f seconds\n", duration)
 
 	cmd := exec.Command(
 		"ffmpeg",
@@ -82,12 +86,12 @@ func processVideo(ctx context.Context, fileNameWithExtension string) (e error) {
 
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
-		return fmt.Errorf("failed to create stdout pipe: %v", err)
+		return fmt.Errorf("failed to create stdout pipe: %v", err), true
 	}
 
 	cmd.Stderr = io.Discard
 	if err := cmd.Start(); err != nil {
-		return fmt.Errorf("failed to start ffmpeg: %v", err)
+		return fmt.Errorf("failed to start ffmpeg: %v", err), true
 	}
 
 	scanner := bufio.NewScanner(stdout)
@@ -109,48 +113,37 @@ func processVideo(ctx context.Context, fileNameWithExtension string) (e error) {
 				progress = 100
 			}
 
+			// TODO: remove printf
 			fmt.Printf("Progress: %.2f%%\n", progress)
 		}
 
 		if line == "progress=end" {
+			// TODO: remove printf
 			fmt.Println("Progress: 100%")
 		}
 	}
 
 	if err := scanner.Err(); err != nil {
-		return fmt.Errorf("failed reading ffmpeg output: %v", err)
+		return fmt.Errorf("failed reading ffmpeg output: %v", err), true
 	}
 
 	if err := cmd.Wait(); err != nil {
-		return fmt.Errorf("ffmpeg failed: %v", err)
+		return fmt.Errorf("ffmpeg failed: %v", err), true
 	}
-
 	fmt.Println("Transcoding completed")
 
-	return nil
+	err = workerRepo.UpdateVideoStatusToCompleted(ctx, videoID)
+	if err != nil {
+		return fmt.Errorf("failed to update video status to completed: %v", err), false
+	}
+	return nil, false
 }
 
-func downloadVideo(ctx context.Context, videoID string) (ok bool) {
-	object, err := minioClient.GetObject(ctx, bucketName, videoID, minio.GetObjectOptions{})
+func downloadVideo(ctx context.Context, filename string) (ok bool) {
+	err := minioClient.FGetObject(ctx, bucketName, filename, filename, minio.GetObjectOptions{})
 	if err != nil {
-		// TODO: remove printf
-		fmt.Printf("err while fetching object: %v \n", err)
-		// TODO: handle deletion of video id entry from database
-		return false
-	}
-	defer object.Close()
-
-	localFile, err := os.Create(videoID)
-	if err != nil {
-		fmt.Printf("err while creating local file: %v \n", err)
-		return false
-	}
-	defer localFile.Close()
-
-	if _, err = io.Copy(localFile, object); err != nil {
-		fmt.Printf("err while copying object to local file: %v \n", err)
-		fmt.Println(err)
-		return false
+		fmt.Println("error while downloading video:", err)
+		return
 	}
 	return true
 }

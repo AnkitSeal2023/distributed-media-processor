@@ -60,6 +60,7 @@ func (r *UploadRepository) UpdateVideoStatus(ctx context.Context, videoID string
 	}
 
 	cmdTag, err := r.db.Exec(ctx, UpdateVideoStatus, status, vidID)
+	// TODO: handle db errors
 	if err != nil {
 		return error_msgs.ErrInternalServer
 	}

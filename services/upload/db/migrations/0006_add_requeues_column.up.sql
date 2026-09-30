@@ -1,0 +1,4 @@
+ALTER TABLE video_uploads
+ADD COLUMN requeues INT DEFAULT 0,
+ADD COLUMN last_error TEXT,
+ADD COLUMN failed_at TIMESTAMPTZ;
